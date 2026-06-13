@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control de Capacitaciones - Estación La Joya</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#f0f2f5;padding:8px}
+.app{max-width:440px;margin:0 auto}
+.hdr{background:#1a1a2e;color:#fff;padding:14px 16px;text-align:center;border-radius:12px 12px 0 0}
+.hdr h1{font-size:16px;font-weight:700}
+.hdr p{font-size:11px;opacity:.7;margin-top:2px}
+.sbar{padding:7px 12px;font-size:11px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;color:#fff}
+.sbar.ok{background:#0d6e4a}.sbar.err{background:#7f1d1d}.sbar.loading{background:#1e3a5f}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sdot.green{background:#4ade80}.sdot.red{background:#f87171}
+.sdot.yellow{background:#fbbf24;animation:blink .8s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.tabs{display:flex;background:#1a1a2e}
+.tab{flex:1;padding:8px 2px;text-align:center;font-size:10px;cursor:pointer;border:none;background:transparent;color:rgba(255,255,255,.6)}
+.tab.on{background:#fff;color:#1a1a2e;font-weight:700;border-radius:8px 8px 0 0;margin-top:3px}
+.body{padding:10px;background:#f0f2f5}
+.card{background:#fff;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.stitle{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.lbl{display:block;font-size:12px;color:#555;margin-bottom:3px;margin-top:10px}
+.lbl:first-of-type{margin-top:0}
+input[type=text],input[type=date],input[type=month],select{width:100%;font-size:13px;padding:8px 10px;border:1px solid #ddd;border-radius:7px;outline:none;background:#fff;color:#222}
+input:focus,select:focus{border-color:#1a1a2e}
+.btn{width:100%;padding:11px;background:#1a1a2e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-g{width:100%;padding:10px;background:#1D9E75;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px}
+.btn-sm{padding:7px 14px;background:#1a1a2e;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
+.btn-out{padding:7px 14px;background:#fff;color:#1a1a2e;border:1.5px solid #1a1a2e;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
+.hidden{display:none!important}
+.empty{text-align:center;padding:20px;color:#aaa;font-size:13px}
+.msg{border-radius:8px;padding:9px 12px;font-size:12px;margin-top:8px;text-align:center}
+.acw{position:relative}
+.acl{position:absolute;top:calc(100% + 3px);left:0;right:0;background:#fff;border:2px solid #1a1a2e;border-radius:8px;max-height:220px;overflow-y:auto;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.aci{padding:11px 14px;font-size:13px;cursor:pointer;color:#222;border-bottom:1px solid #f0f0f0;line-height:1.4}
+.aci:last-child{border-bottom:none}
+.aci:hover{background:#e8f0fe}
+.plist{max-height:280px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;margin-top:6px}
+.pr{display:flex;align-items:center;cursor:pointer;border-bottom:1px solid #f5f5f5}
+.pr:last-child{border-bottom:none}
+.pr.pend{background:#fff}.pr.pend .pn{color:#555}.pr.pend .pk{border:2px solid #ccc;color:transparent;background:#fff}.pr.pend .ps{color:#bbb;background:#f5f5f5}
+.pr.cap{background:#f0faf0}.pr.cap .pn{color:#1a6b1a;font-weight:600}.pr.cap .pk{background:#2A8A2A;border:2px solid #2A8A2A;color:#fff}.pr.cap .ps{color:#1a6b1a;background:#d4edda}
+.pr.sel{background:#e8f0fe}.pr.sel .pn{color:#0c447c;font-weight:600}.pr.sel .pk{background:#1A6FC4;border:2px solid #1A6FC4;color:#fff}.pr.sel .ps{color:#0c447c;background:#cce0f5}
+.pk{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin:9px 10px 9px 12px;font-size:13px;font-weight:700}
+.pn{flex:1;font-size:13px;padding:10px 4px 10px 0;line-height:1.3}
+.ps{font-size:10px;margin-right:8px;padding:2px 7px;border-radius:8px;flex-shrink:0;white-space:nowrap}
+.leg{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0}
+.li{display:flex;align-items:center;gap:4px;font-size:11px;color:#555}
+.ld{width:13px;height:13px;border-radius:50%;flex-shrink:0}
+.pbw{margin:8px 0 4px}
+.pbl{display:flex;justify-content:space-between;font-size:11px;color:#666;margin-bottom:3px}
+.pb{height:9px;border-radius:5px;background:#e8e8e8;overflow:hidden}
+.pbf{height:9px;background:#2A8A2A;border-radius:5px;transition:width .3s}
+.fts{display:flex;gap:5px;margin:8px 0 6px}
+.ft{flex:1;padding:6px 2px;text-align:center;font-size:11px;border-radius:7px;border:1px solid #ddd;cursor:pointer;background:#f5f5f5;color:#555}
+.ft.on{background:#1a1a2e;color:#fff;font-weight:700;border-color:#1a1a2e}
+.sbar2{display:flex;justify-content:space-between;align-items:center;margin-top:7px}
+.sc2{font-size:12px;color:#666}
+.sab{font-size:12px;color:#1A6FC4;background:none;border:none;cursor:pointer;text-decoration:underline}
+.ibox{border-radius:8px;padding:9px 12px;font-size:12px;margin-top:6px;background:#e8f0fe;color:#0c447c;line-height:1.5}
+.ri{padding:10px 0;border-bottom:1px solid #f0f0f0;display:flex;justify-content:space-between;align-items:flex-start}
+.ri:last-child{border-bottom:none}
+.bb{font-size:11px;padding:2px 8px;border-radius:10px;background:#e8f0fe;color:#0c447c;flex-shrink:0;margin-left:8px;white-space:nowrap}
+.sg3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.sc{background:#1a1a2e;border-radius:8px;padding:10px;text-align:center}
+.sn{font-size:20px;font-weight:700;color:#fff}
+.sl{font-size:10px;color:rgba(255,255,255,.7);margin-top:2px}
+.dli{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:12px;color:#333}
+.dli:last-child{border-bottom:none}
+.xb{background:none;border:none;cursor:pointer;color:#bbb;font-size:16px;padding:0 4px;flex-shrink:0}
+.ar{display:flex;gap:6px;margin-bottom:4px}
+.ar input{flex:1}
+.ab{padding:0 13px;background:#f0f0f0;border:1px solid #ddd;border-radius:7px;font-size:18px;cursor:pointer;color:#555;flex-shrink:0}
+.mh{font-size:12px;font-weight:700;color:#555;margin:10px 0 4px;padding:4px 8px;background:#f0f0f0;border-radius:6px}
+.pi{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:12px}
+.pi:last-child{border-bottom:none}
+.fr{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.fr select{flex:1;min-width:120px}
+.stat-table{width:100%;border-collapse:collapse;font-size:12px}
+.stat-table th{background:#1a1a2e;color:#fff;padding:8px 6px;text-align:left;font-size:11px;font-weight:700}
+.stat-table td{padding:8px 6px;border-bottom:1px solid #f0f0f0;color:#333;vertical-align:top}
+.stat-table tr:last-child td{border-bottom:none}
+.stat-table tr:nth-child(even) td{background:#f9f9f9}
+.pbar-w{display:flex;align-items:center;gap:5px}
+.pbar{flex:1;height:7px;background:#e0e0e0;border-radius:4px;overflow:hidden;min-width:30px}
+.pfill{height:7px;border-radius:4px;background:#2A8A2A}
+.plbl{font-size:11px;color:#1a6b1a;font-weight:700;white-space:nowrap;min-width:32px;text-align:right}
+.tw{overflow-x:auto;border-radius:8px;border:1px solid #e0e0e0}
+.br{display:flex;gap:8px;margin-bottom:10px}
+.br button{flex:1}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="hdr">
+  <h1>Control de Capacitaciones</h1>
+  <p>Estación La Joya · Datos en Google Sheets</p>
+</div>
+<div class="sbar loading" id="sb">
+  <div class="sdot yellow" id="sd"></div>
+  <span id="st">Conectando a Google Sheets...</span>
+</div>
+<div class="tabs">
+  <button class="tab on" onclick="ST('reg')">Registrar</button>
+  <button class="tab"    onclick="ST('est')">Estadísticas</button>
+  <button class="tab"    onclick="ST('his')">Historial</button>
+  <button class="tab"    onclick="ST('pro')">Programa</button>
+  <button class="tab"    onclick="ST('bas')">Base</button>
+</div>
+<div class="body">
+
+<!-- REGISTRAR -->
+<div id="t-reg">
+  <div class="card">
+    <p class="stitle">Datos de la capacitación</p>
+    <span class="lbl">Título de la capacitación</span>
+    <div class="acw">
+      <input type="text" id="ci" placeholder="Escribir o buscar..." autocomplete="off" oninput="FAC('c')" onfocus="FAC('c')">
+      <div id="ca" class="acl hidden"></div>
+    </div>
+    <span class="lbl">Fecha</span>
+    <input type="date" id="fi">
+    <span class="lbl">Responsable</span>
+    <div class="acw">
+      <input type="text" id="ei" placeholder="Escribir o buscar..." autocomplete="off" oninput="FAC('e')" onfocus="FAC('e')">
+      <div id="ea" class="acl hidden"></div>
+    </div>
+  </div>
+  <div class="card">
+    <p class="stitle">Participantes</p>
+    <span class="lbl">Área de trabajo</span>
+    <select id="af" onchange="OA()"><option value="">— Elige un área —</option></select>
+    <div id="psec" class="hidden">
+      <div id="ibox" class="ibox hidden"></div>
+      <div class="pbw">
+        <div class="pbl"><span id="pbt">Progreso del área</span><span id="pbp">0%</span></div>
+        <div class="pb"><div class="pbf" id="pbf" style="width:0%"></div></div>
+      </div>
+      <div class="leg">
+        <div class="li"><div class="ld" style="background:#2A8A2A"></div>Ya capacitado</div>
+        <div class="li"><div class="ld" style="background:#1A6FC4"></div>Marcado hoy</div>
+        <div class="li"><div class="ld" style="background:#fff;border:2px solid #ccc"></div>Pendiente</div>
+      </div>
+      <div class="fts">
+        <button class="ft on" id="fa" onclick="SF('todos')">Todos</button>
+        <button class="ft" id="fb" onclick="SF('pendientes')">Pendientes</button>
+        <button class="ft" id="fc" onclick="SF('cap')">Capacitados</button>
+        <button class="ft" id="fd" onclick="SF('hoy')">Hoy</button>
+      </div>
+      <input type="text" id="ps" placeholder="Buscar por nombre..." oninput="RP()">
+      <div class="plist" id="pl"></div>
+      <div class="sbar2">
+        <span class="sc2" id="sc">0 seleccionados hoy</span>
+        <button class="sab" onclick="SAP()">Marcar pendientes</button>
+      </div>
+    </div>
+    <div id="nam" style="padding:16px 0;font-size:13px;color:#aaa;text-align:center">Selecciona un área para ver el personal</div>
+  </div>
+  <button class="btn" onclick="GU()" id="btn-g">Guardar registro</button>
+  <div id="rm" class="hidden msg"></div>
+</div>
+
+<!-- ESTADÍSTICAS -->
+<div id="t-est" class="hidden">
+  <div class="card">
+    <p class="stitle">Filtros del reporte</p>
+    <div class="fr">
+      <select id="f-mes"><option value="">Todos los meses</option></select>
+      <select id="f-area"><option value="">Todas las áreas</option></select>
+    </div>
+    <div class="fr"><select id="f-cap"><option value="">Todas las capacitaciones</option></select></div>
+    <div class="br">
+      <button class="btn-sm" onclick="GEN_EST()">Generar reporte</button>
+      <button class="btn-out" onclick="EX_EST()">Exportar CSV</button>
+    </div>
+  </div>
+  <div class="sg3" id="est-sum" style="display:none">
+    <div class="sc"><div class="sn" id="es-ses">0</div><div class="sl">Sesiones</div></div>
+    <div class="sc"><div class="sn" id="es-pax">0</div><div class="sl">Asistencias</div></div>
+    <div class="sc"><div class="sn" id="es-pct">0%</div><div class="sl">Cobertura</div></div>
+  </div>
+  <div class="card" id="tc-area" style="display:none"><p class="stitle">Cobertura por área</p><div class="tw"><table class="stat-table" id="tbl-area"></table></div></div>
+  <div class="card" id="tc-tema" style="display:none"><p class="stitle">Cobertura por tema de capacitacion</p><div class="tw"><table class="stat-table" id="tbl-tema"></table></div></div>
+  <div class="card" id="tc-areacap" style="display:none"><p class="stitle">Cobertura por area y capacitacion</p><div class="tw"><table class="stat-table" id="tbl-areacap"></table></div></div>
+  <div class="card" id="tc-fecha" style="display:none"><p class="stitle">Sesiones por fecha</p><div class="tw"><table class="stat-table" id="tbl-fecha"></table></div></div>
+  <div class="card" id="tc-det" style="display:none"><p class="stitle">Detalle por participante</p><div class="tw"><table class="stat-table" id="tbl-det"></table></div></div>
+  <div class="card" id="tc-pend" style="display:none">
+    <p class="stitle">Personal pendiente de capacitar</p>
+    <div style="font-size:11px;color:#666;margin-bottom:8px" id="pend-info"></div>
+    <div class="tw"><table class="stat-table" id="tbl-pend"></table></div>
+    <button class="btn-g" onclick="EX_PEND()" style="margin-top:8px">Exportar pendientes a CSV</button>
+  </div>
+  <div id="est-empty" class="card"><div class="empty">Selecciona filtros y presiona "Generar reporte"</div></div>
+</div>
+
+<!-- HISTORIAL -->
+<div id="t-his" class="hidden">
+  <div class="card" id="hl"><div class="empty">Sin registros aún</div></div>
+  <button class="btn-g" onclick="EX_HIS()">Exportar a CSV (Excel)</button>
+</div>
+
+<!-- PROGRAMA -->
+<div id="t-pro" class="hidden">
+  <div class="card">
+    <p class="stitle">Agregar al programa mensual</p>
+    <span class="lbl">Mes y año</span><input type="month" id="pm">
+    <span class="lbl">Título de capacitación</span>
+    <div class="acw">
+      <input type="text" id="pci" placeholder="Buscar o escribir..." autocomplete="off" oninput="FAC('p')" onfocus="FAC('p')">
+      <div id="pa" class="acl hidden"></div>
+    </div>
+    <span class="lbl">Responsable</span>
+    <div class="acw">
+      <input type="text" id="pei" placeholder="Buscar o escribir..." autocomplete="off" oninput="FAC('pe')" onfocus="FAC('pe')">
+      <div id="pea" class="acl hidden"></div>
+    </div>
+    <button class="btn" onclick="AP()">Agregar al programa</button>
+    <div id="prm" class="hidden msg"></div>
+  </div>
+  <div class="card"><p class="stitle">Programa registrado</p><div id="prl"><div class="empty">Sin programa aún</div></div></div>
+</div>
+
+<!-- BASE -->
+<div id="t-bas" class="hidden">
+  <div class="card">
+    <p class="stitle">Títulos de capacitación</p>
+    <div class="ar"><input type="text" id="nc" placeholder="Nuevo título..."><button class="ab" onclick="AB('caps','nc','lc')">+</button></div>
+    <div id="lc" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <p class="stitle">Responsables</p>
+    <div class="ar"><input type="text" id="ne" placeholder="Nombre..."><button class="ab" onclick="AB('exps','ne','le')">+</button></div>
+    <div id="le" style="margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <p class="stitle">Personal</p>
+    <div class="ar">
+      <input type="text" id="nn" placeholder="Nombre completo" style="flex:1.6">
+      <input type="text" id="na" placeholder="Área" style="flex:1">
+      <button class="ab" onclick="ADP()">+</button>
+    </div>
+    <input type="text" id="bp" placeholder="Buscar personal..." oninput="RBP()" style="margin-bottom:4px">
+    <div id="lp" style="max-height:220px;overflow-y:auto"></div>
+  </div>
+</div>
+
+</div></div>
+<script>
+var GS_URL='https://script.google.com/macros/s/AKfycbwACG88QdZlGqy_T4SmLZCSoC8vXg6xmKZXoICKrmr2XPtvhk07PftpcKW98WYi5FyC/exec';
+
+// JSONP universal - funciona sin CORS
+function JSONP(params) {
+  return new Promise(function(resolve) {
+    var cbName = 'cb' + Date.now() + Math.floor(Math.random()*10000);
+    var script = document.createElement('script');
+    var timer = setTimeout(function() {
+      window[cbName] = null;
+      if(script.parentNode) document.head.removeChild(script);
+      resolve({ok:true, timeout:true});
+    }, 30000);
+    window[cbName] = function(data) {
+      clearTimeout(timer);
+      window[cbName] = null;
+      if(script.parentNode) document.head.removeChild(script);
+      resolve(data);
+    };
+    var p = {};
+    for(var k in params) p[k] = params[k];
+    p.callback = cbName;
+    if(p.data && typeof p.data === 'object') p.data = JSON.stringify(p.data);
+    var qs = Object.keys(p).map(function(k){
+      return encodeURIComponent(k)+'='+encodeURIComponent(String(p[k]));
+    }).join('&');
+    script.src = GS_URL + '?' + qs;
+    script.onerror = function() {
+      clearTimeout(timer);
+      window[cbName] = null;
+      resolve({ok:true});
+    };
+    document.head.appendChild(script);
+  });
+}
+
+function GS_GET(sheet) {
+  return JSONP({action:'get', sheet:sheet}).then(function(d){
+    return (d && d.rows) ? d.rows : (Array.isArray(d) ? d : []);
+  });
+}
+function GS(payload) { return JSONP(payload); }
+
+var C0=["SO-PL-002 PLAN DE CONTINGENCIA PARA EL TRANSPORTE DE CONCENTRADO DE COBRE - V03","SO-PL-001 PLAN DE CONTINGENCIAS Y RESPUESTA ANTE EMERGENCIAS ESTACION LA JOYA V03","SO-PL-016 PLAN DE CONTINGENCIAS Y RESPUESTA ANTE EMERGENCIAS ESTACION ISLAY V01","SGIpg0001 Plan de Prep y Rpta a Emerg SMCV V13","SO-P-030 IDENTIFICACION DE PELIGROS, EVALUACION DE RIESGOS Y MEDIDAS DE CONTROL (IPERC) V01","SSOpr0001 PROCEDIMIENTO IDENTIFICACION DE PELIGROS, EVALUACION Y CONTROL DE RIESGOS V22"];
+var E0=["Carlos Torreblanca","Christian Vera","Efrain Meneses","Brian Revilla","Javier Vargas","Cesar Loayza"];
+var P0=[
+{n:"BENAVENTE VITORINO VICTOR",a:"Zona de Carga C1 y C2"},{n:"DELGADO CONDE ERICK JONATHAN",a:"Zona de Carga C1 y C2"},{n:"LA BARRERA PACO DIEGO",a:"Zona de Carga C1 y C2"},{n:"PACHECO SALINAS JUAN CARLOS",a:"Zona de Carga C1 y C2"},{n:"PALLE CONDORI CARLOS RENZO",a:"Zona de Carga C1 y C2"},{n:"PILCO FERNANDEZ GINO WALTER",a:"Zona de Carga C1 y C2"},{n:"ROCCHETTI FIGUEROA BRUNO",a:"Zona de Carga C1 y C2"},{n:"SAAVEDRA BARRIOS JULIO CESAR",a:"Zona de Carga C1 y C2"},{n:"ZEGARRA ZUNIGA ALFREDO",a:"Zona de Carga C1 y C2"},{n:"EDUARDO BUSTAMANTE RICARDO",a:"Zona de Carga C1 y C2"},{n:"GONZALES RAMIREZ HAROLD ERNESTO",a:"Zona de Carga C1 y C2"},{n:"GUTIERREZ PAREDES DERIAN",a:"Zona de Carga C1 y C2"},{n:"MARROQUIN CORDOVA MILTON",a:"Zona de Carga C1 y C2"},{n:"POMA BELISARIO JONATHAN",a:"Zona de Carga C1 y C2"},{n:"QUEQUE UCEDO JUAN CESAR",a:"Zona de Carga C1 y C2"},{n:"RODRIGUEZ HUANCA ELOY NATALIO",a:"Zona de Carga C1 y C2"},{n:"ZAMALLOA CHAVEZ CHRISTIAN",a:"Zona de Carga C1 y C2"},{n:"ZAPATA CASANI RONALD JOSE",a:"Zona de Carga C1 y C2"},{n:"ARACCA CHAMBI ROMULO",a:"Zona de Carga C1 y C2"},{n:"ARACCA QUISPE JAVIER",a:"Zona de Carga C1 y C2"},{n:"AYQUIPA LIMA MAURICIO",a:"Zona de Carga C1 y C2"},{n:"BEGAZO ALVAREZ YVAR ELMER",a:"Zona de Carga C1 y C2"},{n:"EGUILUZ OCHOA LUIS RODRIGO",a:"Zona de Carga C1 y C2"},{n:"GUTIERREZ PIZARRO JAIME",a:"Zona de Carga C1 y C2"},{n:"MACEDO QUISPE JONATHAN ABRAHAM",a:"Zona de Carga C1 y C2"},{n:"MAMANI QUISPE CARLOS GONZALO",a:"Zona de Carga C1 y C2"},{n:"PACCO CAHUANTICO JUAN MANUEL",a:"Zona de Carga C1 y C2"},{n:"PINO CAMATICO ENRIQUE",a:"Zona de Carga C1 y C2"},{n:"RIVERA CONDORIMAY CRISTIAN",a:"Zona de Carga C1 y C2"},{n:"TACO CCAHUANA MIGUEL ANGEL",a:"Zona de Carga C1 y C2"},{n:"TAPIA GARCIA JOSE AARON",a:"Zona de Carga C1 y C2"},{n:"ULARTE ARAZABAL EVER MANUEL",a:"Zona de Carga C1 y C2"},{n:"VALDEZ UMIYAURI ALFONSO EVER",a:"Zona de Carga C1 y C2"},{n:"ZARAVIA QUIROZ BRYAN",a:"Zona de Carga C1 y C2"},{n:"ARCE HERNANI OMAR",a:"Zona de Carga C1 y C2"},{n:"AUCCAILLE YAUTA JULIO CESAR",a:"Zona de Carga C1 y C2"},{n:"FERNANDEZ NAJARRO JONATHAN HECTOR",a:"Zona de Carga C1 y C2"},{n:"MENDOZA YTO EDUARDO",a:"Zona de Carga C1 y C2"},{n:"QUISPE ESPINOZA ADIRT ARTURO",a:"Zona de Carga C1 y C2"},{n:"SUICO CUTI EDGAR DAVID",a:"Zona de Carga C1 y C2"},{n:"TORRES GUTIERREZ RUBEN DARIO",a:"Zona de Carga C1 y C2"},{n:"VALDIVIA PINARES LUIS ALFONSO",a:"Zona de Carga C1 y C2"},
+{n:"RIVERA RIVERA YONI YRVIN",a:"Operadores Tracto Remolcador"},{n:"DIAZ CHIRINOS ALVARO EDILBERTO",a:"Operadores Tracto Remolcador"},{n:"PALOMINO CCONOCC ROSAURA VILMA",a:"Operadores Tracto Remolcador"},{n:"FLORES SAVINA CARLOS ALFREDO",a:"Operadores Tracto Remolcador"},{n:"ZEVALLOS SEGOVIA JORGE ENRIQUE",a:"Operadores Tracto Remolcador"},{n:"ROQUE MAMANI SMITH JOVANY",a:"Operadores Tracto Remolcador"},{n:"BARAZORDA MATOS MIGUEL ERNESTO",a:"Operadores Tracto Remolcador"},{n:"SUTTA QUISPE ENRIQUE",a:"Operadores Tracto Remolcador"},{n:"NUNEZ DURAND JOSE",a:"Operadores Tracto Remolcador"},{n:"MONROY VILCAHUAMAN CARLOS ALBERTO",a:"Operadores Tracto Remolcador"},{n:"AGUILAR AMESQUITA ALEXANDER NESTOR",a:"Operadores Tracto Remolcador"},{n:"ALVAREZ ALVAREZ JUAN",a:"Operadores Tracto Remolcador"},{n:"ARCE ARCE JOSE EDGAR",a:"Operadores Tracto Remolcador"},{n:"AREVALO DEL CARPIO GUILLERMO",a:"Operadores Tracto Remolcador"},{n:"BANDA RETAMOZO LUIS ALBERTO",a:"Operadores Tracto Remolcador"},{n:"BEDREGAL ESPINOZA GUSTAVO CLODOALDO",a:"Operadores Tracto Remolcador"},{n:"BEGAZO DIAZ DELVY CESAR",a:"Operadores Tracto Remolcador"},{n:"BENAVENTE MAMANI MANUEL SANTIAGO",a:"Operadores Tracto Remolcador"},{n:"CALAPUJA CALAPUJA HECTOR",a:"Operadores Tracto Remolcador"},{n:"CAMACHO FERNANDEZ OMAR GIOVANNI",a:"Operadores Tracto Remolcador"},{n:"CAPIA CHAUCAYANQUI EDUARDO GINO",a:"Operadores Tracto Remolcador"},{n:"CARAPI BORDA LUIS ALBERTO",a:"Operadores Tracto Remolcador"},{n:"CARPIO REINOSO RICARDO SALOMON",a:"Operadores Tracto Remolcador"},{n:"CASAPIA CAMARA RENEE WILFREDO",a:"Operadores Tracto Remolcador"},{n:"CCAMA MAMANI YURI JACINTO",a:"Operadores Tracto Remolcador"},{n:"CCANAHUIRE QUISPE ANTONIO",a:"Operadores Tracto Remolcador"},{n:"CHOQUE PAUCCARA JUAN CARLOS",a:"Operadores Tracto Remolcador"},{n:"COAGUILA MANCHEGO ROBERTO",a:"Operadores Tracto Remolcador"},{n:"COLANA GUTIERREZ CRISTOBAL VALERIANO",a:"Operadores Tracto Remolcador"},{n:"COLLADO PANIAGUA LUIS ALBERTO",a:"Operadores Tracto Remolcador"},{n:"CONDORI JIQUE EMMEL",a:"Operadores Tracto Remolcador"},{n:"CONDORI QUISPE GABINO",a:"Operadores Tracto Remolcador"},{n:"CONTRERAS MORI EMERSON ALEXANDER",a:"Operadores Tracto Remolcador"},{n:"CUADROS PERALTA BRAYAN EMERSSON",a:"Operadores Tracto Remolcador"},{n:"CUPI HUAMAN HENRY EDGARDO",a:"Operadores Tracto Remolcador"},{n:"DELGADO GALLEGOS EDUARDO",a:"Operadores Tracto Remolcador"},{n:"DIAZ MALQUE ERNESTO FABIO",a:"Operadores Tracto Remolcador"},{n:"DIAZ MEZA BERTYN TOMAS EDWIN",a:"Operadores Tracto Remolcador"},{n:"DUENAS QUISPITUPAC REY EBARISTO",a:"Operadores Tracto Remolcador"},{n:"ESQUIVEL CORRALES NICOLAS ALBERTO",a:"Operadores Tracto Remolcador"},{n:"FERNANDEZ DAVILA DIEGO ALEJANDRO",a:"Operadores Tracto Remolcador"},{n:"FLORES CHAVEZ JAIME ANDRES",a:"Operadores Tracto Remolcador"},{n:"FLORES PUMA EDWARD",a:"Operadores Tracto Remolcador"},{n:"GAMARRA MARTINEZ CHRISTIAN",a:"Operadores Tracto Remolcador"},{n:"GARCIA HUAMAN BORIS DELVIS",a:"Operadores Tracto Remolcador"},{n:"GOMEZ DELGADO MARIO ELARD",a:"Operadores Tracto Remolcador"},{n:"GOMEZ RIVERA GERMAN",a:"Operadores Tracto Remolcador"},{n:"GONZALES LLERENA ELADIO JIMMY",a:"Operadores Tracto Remolcador"},{n:"GRANDA CARNERO FIDEL HUMBERTO",a:"Operadores Tracto Remolcador"},{n:"GUTIERREZ RODRIGUEZ JULIO ALBERTO",a:"Operadores Tracto Remolcador"},{n:"HERRERA CASTILLO EDWING ROGER",a:"Operadores Tracto Remolcador"},{n:"HERRERA SANDOVAL LUIS",a:"Operadores Tracto Remolcador"},{n:"HUACARPUMA PEREZ EDUARDO",a:"Operadores Tracto Remolcador"},{n:"HUANCA RIVERA ALFREDO LEONIDAS",a:"Operadores Tracto Remolcador"},{n:"HUAQUISTO CALSINA VIDAL LUYE",a:"Operadores Tracto Remolcador"},{n:"HUAYAPA GALLEGOS NERIO",a:"Operadores Tracto Remolcador"},{n:"INFANTES CUEVA CEFERINO GODOFREDO",a:"Operadores Tracto Remolcador"},{n:"JACOBO ZAPANA YUBER RENY",a:"Operadores Tracto Remolcador"},{n:"LASTEROS EDWARD",a:"Operadores Tracto Remolcador"},{n:"LIMACHI QUILLI ISIDRO",a:"Operadores Tracto Remolcador"},{n:"LINARES VALDIVIA ARMANDO WILBER",a:"Operadores Tracto Remolcador"},{n:"LLERENA GONZALES PERCY ROLANDO",a:"Operadores Tracto Remolcador"},{n:"LLERENA PAREDES CARLOS TEOFILO",a:"Operadores Tracto Remolcador"},{n:"LOAIZA DELGADO ELMER NERY",a:"Operadores Tracto Remolcador"},{n:"LOAYZA CHAVEZ JAVIER ARMANDO",a:"Operadores Tracto Remolcador"},{n:"LUDENA VALDIVIA SAUL WALTER",a:"Operadores Tracto Remolcador"},{n:"MACEDO ZUNIGA YEISON JOEL",a:"Operadores Tracto Remolcador"},{n:"MAMANI ALVAREZ JORGE",a:"Operadores Tracto Remolcador"},{n:"MAMANI CENCIA HECTOR ROMERO",a:"Operadores Tracto Remolcador"},{n:"MAMANI TICONA TEOFILO ROLANDO",a:"Operadores Tracto Remolcador"},{n:"MENA APAZA WILFREDO BONIFACIO",a:"Operadores Tracto Remolcador"},{n:"NUNEZ VILCA CARLOS ALBERTO",a:"Operadores Tracto Remolcador"},{n:"OBLITAS ARAGON ENRIQUE WASHINGTON",a:"Operadores Tracto Remolcador"},{n:"OLGADO TORRES YONATHAN",a:"Operadores Tracto Remolcador"},{n:"ORE VILCA JULIO ERNESTO",a:"Operadores Tracto Remolcador"},{n:"ORTIZ ALMONTE HENRY RINALDY",a:"Operadores Tracto Remolcador"},{n:"PACHECO TORRES RAFAEL ISISDRO",a:"Operadores Tracto Remolcador"},{n:"PALLE MAYTA TEOFILO",a:"Operadores Tracto Remolcador"},{n:"PAREDES ESPINOZA LOLO RODOLFO",a:"Operadores Tracto Remolcador"},{n:"PARRA NOHA ROBERTO VICTORIANO",a:"Operadores Tracto Remolcador"},{n:"PINTO REVILLA EDWIN PERCY",a:"Operadores Tracto Remolcador"},{n:"POLAR CHANINI LUIS ALBERTO",a:"Operadores Tracto Remolcador"},{n:"QUIROZ AMESQUITA ALEX FELIX",a:"Operadores Tracto Remolcador"},{n:"QUIROZ ASTORGA GUIDO RUBEN",a:"Operadores Tracto Remolcador"},{n:"QUIROZ ASTORGA WILLY CESAR",a:"Operadores Tracto Remolcador"},{n:"QUISPE LOPE BENANCIO",a:"Operadores Tracto Remolcador"},{n:"QUISPE QUISPE FELIPE BENICIO",a:"Operadores Tracto Remolcador"},{n:"RIVERA CARPIO JORGE MANUEL",a:"Operadores Tracto Remolcador"},{n:"RODRIGUEZ CHIRINOS MICHEL ROMAIN",a:"Operadores Tracto Remolcador"},{n:"RODRIGUEZ LUQUE ISIDRO RICHARD",a:"Operadores Tracto Remolcador"},{n:"ROJAS DEL CARPIO RICARDO ROMUALDO",a:"Operadores Tracto Remolcador"},{n:"SALAS VALDIVIA RICHARD ABRAHAM",a:"Operadores Tracto Remolcador"},{n:"SEGOVIA FLORES ELMER BENIGNO",a:"Operadores Tracto Remolcador"},{n:"SILVA ZUNIGA ALVARO HERMES",a:"Operadores Tracto Remolcador"},{n:"TAPIA PACHECO ALEX",a:"Operadores Tracto Remolcador"},{n:"TICONA GONZALES EDWIN CESAR",a:"Operadores Tracto Remolcador"},{n:"TORANZO ALFARO JUAN SALOMON",a:"Operadores Tracto Remolcador"},{n:"TURPO PORTILLO TEOFILO SIMON",a:"Operadores Tracto Remolcador"},{n:"VARGAS TEJADA ROBERTO HENRY",a:"Operadores Tracto Remolcador"},{n:"VERA CALLANIAUPA ALEX",a:"Operadores Tracto Remolcador"},{n:"VILLANUEVA TICONA MIGUEL ANGEL",a:"Operadores Tracto Remolcador"},{n:"VIVEROS MAMANI ERONEC SILVER",a:"Operadores Tracto Remolcador"},{n:"VIZCARRA PARQUI GONZALO VICTOR",a:"Operadores Tracto Remolcador"},{n:"ZAMBRANO VALDIVIA ANDRES JULIO",a:"Operadores Tracto Remolcador"},{n:"ZEA ARAGON JUAN ALONSO SCOTT",a:"Operadores Tracto Remolcador"},{n:"ZEGARRA MANRIQUE ALBERTO SALVADOR",a:"Operadores Tracto Remolcador"},{n:"ZELA AGUILAR RENE",a:"Operadores Tracto Remolcador"},{n:"ZEVALLOS ALCCA HUMBERTO FREDY",a:"Operadores Tracto Remolcador"},
+{n:"BENAVIDES DELGADO ALONSO JAVIER",a:"Transferencia de Contenedores"},{n:"MURO MONTESINOS ANDRES",a:"Transferencia de Contenedores"},{n:"PALACIOS LOPEZ CESAR AUGUSTO",a:"Transferencia de Contenedores"},{n:"PINTO ARANA LUCIANO LEONARDO",a:"Transferencia de Contenedores"},{n:"ZEBALLOS VERA OSWALDO",a:"Transferencia de Contenedores"},{n:"CORNEJO CALDERON HERBER",a:"Transferencia de Contenedores"},{n:"LOPEZ CONTRERAS OMAR",a:"Transferencia de Contenedores"},{n:"PONCE DIAZ DEYBING",a:"Transferencia de Contenedores"},{n:"SARAVIA SORIA CHRISTIAN",a:"Transferencia de Contenedores"},{n:"LUDENA VASQUEZ ANTONY RENATO",a:"Transferencia de Contenedores"},{n:"CCORA CONSA EDWIN",a:"Transferencia de Contenedores"},{n:"CHALCO PARI JAVIER",a:"Transferencia de Contenedores"},{n:"FIGUEROA VILCAHUAMAN JOHAN",a:"Transferencia de Contenedores"},{n:"HITO CHOQUE IGNACIO CELIO",a:"Transferencia de Contenedores"},{n:"HITO CHOQUE VICTOR",a:"Transferencia de Contenedores"},{n:"LOPEZ ALVAREZ GUIDO BERLY",a:"Transferencia de Contenedores"},{n:"TICONA BERROA MILWARD",a:"Transferencia de Contenedores"},{n:"CHURA HUAYLLA JUAN JAVIER",a:"Transferencia de Contenedores"},{n:"ESCOBEDO HUAMANI ENRIQUE",a:"Transferencia de Contenedores"},{n:"TAPIA CAHUANA CESAR ROBERTO",a:"Transferencia de Contenedores"},{n:"RIVERA QUICO STEVEN TEODORO",a:"Transferencia de Contenedores"},{n:"PEREZ DIAZ JHON MANUEL",a:"Transferencia de Contenedores"},{n:"TANCO AGUILAR GIOVANNI FABRICIO",a:"Transferencia de Contenedores"},{n:"MENDOZA NINA ROGER",a:"Transferencia de Contenedores"},{n:"CAHUANA RIOS MILGUAR",a:"Transferencia de Contenedores"},{n:"CAYLLAHUA HUANCA JAIME",a:"Transferencia de Contenedores"},{n:"CORSO MELITON BENJAMIN",a:"Transferencia de Contenedores"},{n:"AGUILAR CALISAYA BRYAN JEFFERSON",a:"Transferencia de Contenedores"},{n:"MORALES HORQQUE RONNY MELQUIADES",a:"Transferencia de Contenedores"},{n:"PAUCA PANTIGOSO PAUL",a:"Transferencia de Contenedores"},
+{n:"BARRETO CHIPANA SANTIAGO",a:"Transferencia de Contenedores Trenes"},{n:"BERMUDEZ VALDIVIA KEVIN JESUS",a:"Transferencia de Contenedores Trenes"},{n:"CALCINA BEDOYA JUAN CARLOS",a:"Transferencia de Contenedores Trenes"},{n:"CCAMA CONDORI CARLOS ALBERTO",a:"Transferencia de Contenedores Trenes"},{n:"COA MORALES DIEGO",a:"Transferencia de Contenedores Trenes"},{n:"ESPINOZA YANYACHI JOEAN",a:"Transferencia de Contenedores Trenes"},{n:"FLORES UMPIRE CHRISTIAN JESUS",a:"Transferencia de Contenedores Trenes"},{n:"HERRERA BARRIOS JESUS NICOLAS",a:"Transferencia de Contenedores Trenes"},{n:"HUARACHA HILARI MARIO PABLO",a:"Transferencia de Contenedores Trenes"},{n:"MOSCOSO PACHECO BERNARDINO",a:"Transferencia de Contenedores Trenes"},{n:"PILCO ESCOBEDO VALENTIN",a:"Transferencia de Contenedores Trenes"},{n:"MENDOZA RAMIREZ VICTORIANO",a:"Transferencia de Contenedores Trenes"},{n:"QUISPE HUARACHI JUAN GUILLERMO",a:"Transferencia de Contenedores Trenes"},{n:"RIVAS SILVA FAUSTO",a:"Transferencia de Contenedores Trenes"},{n:"SALAVERRY LAZARTE LUIS ALBERTO",a:"Transferencia de Contenedores Trenes"},{n:"TESILLO CONDORI FELIX",a:"Transferencia de Contenedores Trenes"},{n:"VIZCARRA MOSCOSO KEVIN MATHEW",a:"Transferencia de Contenedores Trenes"},{n:"WAGNER ROSADO ALEX",a:"Transferencia de Contenedores Trenes"},
+{n:"MALAGA SALAZAR WILLIAM SANDRO",a:"Mantenimiento de Camiones"},{n:"CHAMPE MAMANI ARTURO CELSO",a:"Mantenimiento de Camiones"},{n:"CHIPANA JIHUALLANCCA JHON",a:"Mantenimiento de Camiones"},{n:"ESTOFANERO CHILE PETER",a:"Mantenimiento de Camiones"},{n:"FLORES MUNOZ JORDAN ALEXIS",a:"Mantenimiento de Camiones"},{n:"SUAREZ CASQUINA GUSTAVO",a:"Mantenimiento de Camiones"},{n:"GUZMAN QUISPE APOLINARIO",a:"Mantenimiento de Camiones"},{n:"ITUSACA TURPO ALEJANDRO PORFIRIO",a:"Mantenimiento de Camiones"},{n:"MANRIQUE ZAVALAGA ELMER CESAR",a:"Mantenimiento de Camiones"},{n:"RAMIREZ ENRIQUEZ JHON",a:"Mantenimiento de Camiones"},{n:"CONDORI CONDORI LEODAN",a:"Mantenimiento de Camiones"},{n:"HUAYHUA CHOQUE JULIO CESAR",a:"Mantenimiento de Camiones"},{n:"SOLORZANO LLACMA JULIO CESAR",a:"Mantenimiento de Camiones"},{n:"HUARCA PACHECO FRANK JUNIOR",a:"Mantenimiento de Camiones"},{n:"ALVARADO COLQUEHUANCA JOSE MANUEL",a:"Mantenimiento de Camiones"},
+{n:"KEVIN ARUTAYPE NAVINTA",a:"Mantenimiento de Gruas"},{n:"CHOQUEHUAYTA MUNOZ HENRY",a:"Mantenimiento de Gruas"},
+{n:"VIZCARRA CHAVEZ CHRISTIAN",a:"Descarga de Concentrado"},{n:"QUISPE CHAMBILLA EDWING ISIDRO",a:"Descarga de Concentrado"},{n:"VENTURA VILCA WILAR",a:"Descarga de Concentrado"},{n:"CONDORI BUSTINCIO NELSON",a:"Descarga de Concentrado"},{n:"CUEVAS QUISPE FELIX AURELIO",a:"Descarga de Concentrado"},{n:"CUEVAS FLORES JERSSON HUGO",a:"Descarga de Concentrado"},{n:"ESPINOZA FLORES SANTIAGO",a:"Descarga de Concentrado"},{n:"QUISPE HUARACHI JAVIER",a:"Descarga de Concentrado"},{n:"VELASQUEZ CALDERON ANGEL",a:"Descarga de Concentrado"},{n:"AYAMAMANI MAMANI REYNALDO",a:"Descarga de Concentrado"},{n:"RAMOS APAZA GUILLERMO ANDY",a:"Descarga de Concentrado"},{n:"CORNEJO MAMANI DIEGO",a:"Descarga de Concentrado"},{n:"GALLEGOS BASURCO CARLOS",a:"Descarga de Concentrado"},{n:"ORDONEZ RETAMOZO IVAN",a:"Descarga de Concentrado"},{n:"GONZALES ARROYO ABEL",a:"Descarga de Concentrado"},{n:"LLERENA ZAMATA CARLOS",a:"Descarga de Concentrado"},{n:"UMASI LLAIQUE JORGE LEONEL",a:"Descarga de Concentrado"},{n:"CUTIPA CASTILLO FELIPE",a:"Descarga de Concentrado"},{n:"FARFAN VARGAS VICTOR JESUS",a:"Descarga de Concentrado"},{n:"CALLE GERI LUIS HUMBERTO",a:"Descarga de Concentrado"},{n:"MEZA MUNOZ ANTHONY",a:"Descarga de Concentrado"},{n:"HUAYLLANI MENDOZA VICTOR RAUL",a:"Descarga de Concentrado"},{n:"MEDINA MARQUEZ LUIS ALEXANDER",a:"Descarga de Concentrado"},{n:"GALLEGOS VELASQUEZ SERGIO",a:"Descarga de Concentrado"},{n:"PAZ ZEVALLOS SHEYDER YERVES",a:"Descarga de Concentrado"},{n:"MAMANI CONDORI GLORIA",a:"Descarga de Concentrado"},{n:"BARRIGA QUISPE MOISES DAVID",a:"Descarga de Concentrado"},{n:"ALVAREZ MAMANI HERNAN ALONSO",a:"Descarga de Concentrado"},{n:"CUEVAS QUISPE HUGO MARTIN",a:"Descarga de Concentrado"},{n:"CARPIO MACEDO FABRIZIO GUSTAVO",a:"Descarga de Concentrado"},{n:"CCORA AHUMADA JHON WILVER",a:"Descarga de Concentrado"},{n:"NUNEZ ARY DEYVI ABEL",a:"Descarga de Concentrado"},{n:"CASTILLA VARGAS CRISTIAN",a:"Descarga de Concentrado"},{n:"PACHECO ANTON LUIS ALFREDO",a:"Descarga de Concentrado"},{n:"ZEGARRA AMADO JESUS",a:"Descarga de Concentrado"},{n:"LLAQUI TACO EFRAIN AURELIO",a:"Descarga de Concentrado"},{n:"ALANOCA MAYTA DAVID",a:"Descarga de Concentrado"},{n:"ALVARADO BALLENAS EDWARD",a:"Descarga de Concentrado"},{n:"CHAVEZ CALDERON JUAN MILGUAR",a:"Descarga de Concentrado"},{n:"GUTIERREZ VALENCIA JOHAN KREIS",a:"Descarga de Concentrado"},{n:"LUQUE ANDIA GONZALO",a:"Descarga de Concentrado"},{n:"BALLON VARGAS VICTOR JOEL",a:"Descarga de Concentrado"},{n:"GIRON MAMANI DENIS",a:"Descarga de Concentrado"},{n:"MEZA BARRIOS BREHEINER ALEXANDER",a:"Descarga de Concentrado"},
+{n:"OJEDA AVENDANO OSWALDO",a:"Mantenimiento Locomotora"},{n:"DAVILA TORRES DIONICIO",a:"Mantenimiento Locomotora"},{n:"HUARACHI YUCRA ANTONIO BRUNO",a:"Mantenimiento Locomotora"},{n:"VILLALBA MAMANI EDISON YULIAN",a:"Mantenimiento Locomotora"},{n:"CONDORI MAMANI LUIS ENRIQUE",a:"Mantenimiento Locomotora"},{n:"CHOQUEPATA FERNANDEZ DEMETRIO",a:"Mantenimiento Locomotora"},{n:"MANSILLA CURI ELIAS",a:"Mantenimiento Locomotora"},{n:"GONGORA TICONA NILSON RUBEN",a:"Mantenimiento Locomotora"},{n:"MIRANDA ARGOTE JAVIER ELISBAN",a:"Mantenimiento Locomotora"},{n:"CONDORI QUISPE RUBEN ANTONY",a:"Mantenimiento Locomotora"},{n:"VALDIVIA GAIMES LEOPOLDO",a:"Mantenimiento Locomotora"},{n:"CARI ROJAS GABRIEL MARCOS",a:"Mantenimiento Locomotora"},{n:"GONZALES ESQUICHE JOSE ANTONIO",a:"Mantenimiento Locomotora"},{n:"CCAMA CUTIPA IVAN",a:"Mantenimiento Locomotora"},
+{n:"VARGAS ZORRILLA JAVIER",a:"SSOMA"},{n:"VERA ARZUBIALDE CHRISTIAN ARTURO",a:"SSOMA"},{n:"MENESES CHOQUE EFRAIN",a:"SSOMA"},{n:"REVILLA SALAZAR BRIAN JERENIE",a:"SSOMA"},{n:"TORREBLANCA PAEZ CARLOS UBALDO",a:"SSOMA"}
+];
+
+var db={caps:C0.slice(),exps:E0.slice(),personal:P0.slice(),registros:[],programa:[]};
+var tidx={},selH={},filtro='todos';
+
+function SS2(state,msg){
+  var b=document.getElementById('sb'),d=document.getElementById('sd'),t=document.getElementById('st');
+  b.className='sbar '+state;
+  d.className='sdot '+(state==='ok'?'green':state==='err'?'red':'yellow');
+  t.textContent=msg;
+}
+
+function BTI(){
+  tidx={};
+  db.registros.forEach(function(r){
+    if(!tidx[r.cap])tidx[r.cap]={};
+    r.participantes.forEach(function(p){tidx[r.cap][p.n]=true;});
+  });
+}
+
+function trained(cap,nombre){return !!(tidx[cap]&&tidx[cap][nombre]);}
+
+async function INIT(){
+  SS2('loading','Conectando a Google Sheets...');
+  try{
+    // Cargar detalle de participantes
+    var det=await GS_GET('Detalle');
+    if(det && det.length){
+      var map={};
+      det.forEach(function(r){
+        var id=String(r.ID_Registro||r.ID||'');
+        if(!id) return;
+        if(!map[id]) map[id]={cap:r.Capacitacion||'',fecha:r.Fecha||'',exp:r.Responsable||'',participantes:[],id:id};
+        if(r.Participante) map[id].participantes.push({n:String(r.Participante),a:String(r.Area||'')});
+      });
+      db.registros=Object.values(map).filter(function(r){return r.participantes.length>0;});
+    }
+    // Cargar capacitaciones personalizadas
+    try{var c=await GS_GET('Capacitaciones');if(c&&c.length)db.caps=c.map(function(r){return r.Titulo||'';}).filter(Boolean);}catch(e){}
+    // Cargar responsables personalizados
+    try{var ex=await GS_GET('Responsables');if(ex&&ex.length)db.exps=ex.map(function(r){return r.Nombre||'';}).filter(Boolean);}catch(e){}
+    try{var pg=await GS_GET('Programa');if(pg&&pg.length)db.programa=pg.map(function(r){return{mes:r.Mes,cap:r.Capacitacion,exp:r.Responsable,id:r.ID};});}catch(e){}
+    BTI();BAF();RH_();
+    // Contar personas únicas capacitadas
+    var totalCap=0;
+    Object.keys(tidx).forEach(function(k){totalCap+=Object.keys(tidx[k]).length;});
+    var msg='Conectado · '+db.registros.length+' sesion'+(db.registros.length!==1?'es':'')+' · '+totalCap+' asistencia'+(totalCap!==1?'s':'')+' cargada'+(totalCap!==1?'s':'');
+    SS2('ok',msg);
+  }catch(e){
+    SS2('err','Error de conexion con Google Sheets');
+  }
+}
+
+function ST(t){
+  ['reg','est','his','pro','bas'].forEach(function(x){document.getElementById('t-'+x).classList.toggle('hidden',x!==t);});
+  document.querySelectorAll('.tab').forEach(function(el,i){el.classList.toggle('on',['reg','est','his','pro','bas'][i]===t);});
+  CAC();
+  if(t==='est')INIT_EST();
+  if(t==='his')RH_();
+  if(t==='pro')RPR();
+  if(t==='bas'){RB('caps','lc');RB('exps','le');RBP();}
+  if(t==='reg')BAF();
+}
+
+function BAF(){
+  var areas=[...new Set(db.personal.map(function(p){return p.a;}))].sort();
+  var sel=document.getElementById('af');
+  sel.innerHTML='<option value="">— Elige un area —</option>'+areas.map(function(a){return '<option value="'+a+'">'+a+'</option>';}).join('');
+}
+
+function OA(){
+  var area=document.getElementById('af').value;
+  document.getElementById('psec').classList.toggle('hidden',!area);
+  document.getElementById('nam').classList.toggle('hidden',!!area);
+  if(!area)return;
+  document.getElementById('ps').value='';filtro='todos';UF();selH={};RP();
+}
+
+function UCC(){BTI();var area=document.getElementById('af').value;if(area)RP();}
+function SF(f){filtro=f;UF();RP();}
+function UF(){['todos','pendientes','cap','hoy'].forEach(function(f,i){document.getElementById(['fa','fb','fc','fd'][i]).classList.toggle('on',f===filtro);});}
+
+function RP(){
+  var area=document.getElementById('af').value,cap=document.getElementById('ci').value.trim(),q=document.getElementById('ps').value.toLowerCase();
+  if(!area)return;
+  var items=db.personal.map(function(p,i){return{p:p,i:i};}).filter(function(x){return x.p.a===area;});
+  var tot=items.length,tc=items.filter(function(x){return trained(cap,x.p.n);}).length,pct=tot?Math.round(tc/tot*100):0;
+  var ib=document.getElementById('ibox');
+  if(cap&&tc>0){ib.classList.remove('hidden');ib.innerHTML='Capacitados anteriormente: <b>'+tc+'</b> de '+tot+'. Faltan: <b>'+(tot-tc)+'</b>.';}
+  else ib.classList.add('hidden');
+  document.getElementById('pbt').textContent=tc+' de '+tot+' capacitados';
+  document.getElementById('pbp').textContent=pct+'%';
+  document.getElementById('pbf').style.width=pct+'%';
+  if(q)items=items.filter(function(x){return x.p.n.toLowerCase().includes(q);});
+  if(filtro==='pendientes')items=items.filter(function(x){return !trained(cap,x.p.n)&&!selH[x.i];});
+  if(filtro==='cap')items=items.filter(function(x){return trained(cap,x.p.n);});
+  if(filtro==='hoy')items=items.filter(function(x){return !!selH[x.i];});
+  items.sort(function(a,b){
+    var oa=selH[a.i]?0:trained(cap,a.p.n)?1:2;
+    var ob=selH[b.i]?0:trained(cap,b.p.n)?1:2;
+    return oa-ob||a.p.n.localeCompare(b.p.n);
+  });
+  var el=document.getElementById('pl');
+  if(!items.length){el.innerHTML='<div class="empty">Sin resultados</div>';USC();return;}
+  el.innerHTML=items.map(function(x){
+    var iT=trained(cap,x.p.n),isH=!!selH[x.i];
+    var cls='pend',lbl='Pendiente',ico='';
+    if(isH){cls='sel';lbl='Marcado hoy';ico='+';}
+    else if(iT){cls='cap';lbl='Ya capacitado';ico='+';}
+    return '<div class="pr '+cls+'" onclick="TS('+x.i+')"><div class="pk">'+ico+'</div><div class="pn">'+x.p.n+'</div><span class="ps">'+lbl+'</span></div>';
+  }).join('');USC();
+}
+
+function TS(i){if(selH[i])delete selH[i];else selH[i]=true;RP();}
+
+function SAP(){
+  var area=document.getElementById('af').value,cap=document.getElementById('ci').value.trim();
+  db.personal.forEach(function(p,i){if(p.a===area&&!trained(cap,p.n))selH[i]=true;});RP();
+}
+
+function USC(){var n=Object.keys(selH).length;document.getElementById('sc').textContent=n+' seleccionado'+(n!==1?'s':'')+' para esta sesion';}
+
+var ACS={c:{inp:'ci',ac:'ca',src:'caps'},e:{inp:'ei',ac:'ea',src:'exps'},p:{inp:'pci',ac:'pa',src:'caps'},pe:{inp:'pei',ac:'pea',src:'exps'}};
+function FAC(m){
+  var c=ACS[m];if(!c)return;
+  var val=document.getElementById(c.inp).value.toLowerCase();
+  var items=db[c.src].filter(function(x){return !val||x.toLowerCase().includes(val);});
+  var el=document.getElementById(c.ac);
+  if(!items.length){el.classList.add('hidden');return;}
+  el.innerHTML=items.map(function(x){return '<div class="aci" onmousedown="event.preventDefault();SCA(\''+m+'\',\''+x.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'+x+'</div>';}).join('');
+  el.classList.remove('hidden');
+}
+function SCA(m,val){var c=ACS[m];document.getElementById(c.inp).value=val;document.getElementById(c.ac).classList.add('hidden');if(m==='c')UCC();}
+function CAC(){Object.values(ACS).forEach(function(c){var el=document.getElementById(c.ac);if(el)el.classList.add('hidden');});}
+document.addEventListener('click',function(e){
+  var inAC=Object.values(ACS).some(function(c){
+    return (document.getElementById(c.ac)&&document.getElementById(c.ac).contains(e.target))||(document.getElementById(c.inp)&&document.getElementById(c.inp)===e.target);
+  });
+  if(!inAC)CAC();
+});
+
+async function GU(){
+  var cap=document.getElementById('ci').value.trim();
+  var fecha=document.getElementById('fi').value;
+  var exp=document.getElementById('ei').value.trim();
+  var sel=Object.keys(selH).map(function(i){return db.personal[+i];}).filter(Boolean);
+  if(!cap||!fecha||!exp||!sel.length){SM('rm','Completa todos los campos y selecciona participantes.',false);return;}
+  var btn=document.getElementById('btn-g');
+  btn.disabled=true;btn.textContent='Guardando...';
+  SS2('loading','Guardando en Google Sheets...');
+  try{
+    var id=String(Date.now());
+    for(var i=0;i<sel.length;i++){
+      var p=sel[i];
+      await GS({action:'append',sheet:'Detalle',data:{ID_Registro:id,Fecha:fecha,Capacitacion:cap,Responsable:exp,Participante:p.n,Area:p.a}});
+    }
+    db.registros.push({cap:cap,fecha:fecha,exp:exp,participantes:sel,id:id});
+    BTI();
+    document.getElementById('ci').value='';document.getElementById('ei').value='';
+    document.getElementById('af').value='';
+    document.getElementById('psec').classList.add('hidden');
+    document.getElementById('nam').classList.remove('hidden');
+    document.getElementById('ibox').classList.add('hidden');
+    selH={};
+    SS2('ok','Guardado correctamente · '+db.registros.length+' registros en total');
+    SM('rm','Registro guardado correctamente en Google Sheets.',true);
+  }catch(e){
+    SS2('err','Error al guardar');
+    SM('rm','Error al guardar. Intenta de nuevo.',false);
+  }
+  btn.disabled=false;btn.textContent='Guardar registro';
+}
+
+function normFecha(f){
+  f=String(f||'').trim();
+  if(!f) return '';
+  // Formato YYYY-MM ya listo
+  if(/^\d{4}-\d{2}$/.test(f)) return f;
+  // Formato YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}/.test(f)) return f.substring(0,7);
+  // Formato Google Sheets: "Wed May 13 2026 00:00:00 GMT-0500..."
+  // Parsear con Date
+  var d=new Date(f);
+  if(!isNaN(d.getTime())){
+    var y=d.getFullYear();
+    var m=d.getMonth()+1;
+    return y+'-'+(m<10?'0'+m:String(m));
+  }
+  // Formato MM/DD/YYYY
+  var p=f.split('/');
+  if(p.length===3){
+    var y2=p[2].substring(0,4);
+    var m2=parseInt(p[0]);
+    return y2+'-'+(m2<10?'0'+m2:String(m2));
+  }
+  return '';
+}
+
+function normFechaFull(f){
+  // Devuelve YYYY-MM-DD para mostrar en historial
+  f=String(f||'').trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(f)) return f;
+  var d=new Date(f);
+  if(!isNaN(d.getTime())){
+    var y=d.getFullYear();
+    var m=d.getMonth()+1;
+    var dd=d.getDate();
+    return y+'-'+(m<10?'0'+m:String(m))+'-'+(dd<10?'0'+dd:String(dd));
+  }
+  return f;
+}
+
+function INIT_EST(){
+  var meses=[...new Set(db.registros.map(function(r){
+    return normFecha(r.fecha);
+  }).filter(function(m){return m&&m.length===7&&m.indexOf('-')===4;}))].sort().reverse();
+  var areas=[...new Set(db.personal.map(function(p){return p.a;}))].sort();
+  document.getElementById('f-mes').innerHTML='<option value="">Todos los meses</option>'+meses.map(function(m){return '<option value="'+m+'">'+FMes(m)+'</option>';}).join('');
+  document.getElementById('f-area').innerHTML='<option value="">Todas las areas</option>'+areas.map(function(a){return '<option value="'+a+'">'+a+'</option>';}).join('');
+  document.getElementById('f-cap').innerHTML='<option value="">Todas las capacitaciones</option>'+db.caps.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
+}
+function FMes(ym){
+  if(!ym||typeof ym!=='string') return String(ym);
+  var p=ym.trim().split('-');
+  if(p.length<2) return ym;
+  var mn=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  var mes=parseInt(p[1]);
+  if(isNaN(mes)||mes<1||mes>12) return ym;
+  return mn[mes-1]+' '+p[0];
+}
+
+function GEN_EST(){
+  var fM=document.getElementById('f-mes').value,fA=document.getElementById('f-area').value,fC=document.getElementById('f-cap').value;
+  var regs=db.registros.filter(function(r){
+    if(fM&&normFecha(r.fecha)!==fM)return false;
+    if(fC&&r.cap!==fC)return false;
+    if(fA&&!r.participantes.some(function(p){return p.a===fA;}))return false;
+    return true;
+  });
+  ['est-sum','tc-area','tc-tema','tc-areacap','tc-fecha','tc-det','tc-pend'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+  if(!regs.length){document.getElementById('est-empty').classList.remove('hidden');document.querySelector('#est-empty .empty').textContent='No hay registros con esos filtros.';return;}
+  document.getElementById('est-empty').classList.add('hidden');
+  var pax=regs.reduce(function(s,r){var ps=fA?r.participantes.filter(function(p){return p.a===fA;}):r.participantes;return s+ps.length;},0);
+  var persArea=fA?db.personal.filter(function(p){return p.a===fA;}):db.personal;
+  var cap_set={};regs.forEach(function(r){var ps=fA?r.participantes.filter(function(p){return p.a===fA;}):r.participantes;ps.forEach(function(p){cap_set[p.n]=true;});});
+  var capCount=Object.keys(cap_set).length;
+  var pct=persArea.length?Math.round(capCount/persArea.length*100):0;
+  document.getElementById('es-ses').textContent=regs.length;
+  document.getElementById('es-pax').textContent=pax;
+  document.getElementById('es-pct').textContent=pct+'%';
+  document.getElementById('est-sum').style.display='grid';
+  var am={};regs.forEach(function(r){r.participantes.forEach(function(p){if(fA&&p.a!==fA)return;if(!am[p.a])am[p.a]={};am[p.a][p.n]=true;});});
+  document.getElementById('tbl-area').innerHTML='<thead><tr><th>Area</th><th>Capacitados</th><th>Total</th><th>Cobertura</th></tr></thead><tbody>'+
+    Object.keys(am).sort(function(a,b){return Object.keys(am[b]).length-Object.keys(am[a]).length;}).map(function(area){
+      var s=Object.keys(am[area]).length,tot=db.personal.filter(function(p){return p.a===area;}).length,p2=tot?Math.round(s/tot*100):0;
+      return '<tr><td>'+area+'</td><td style="text-align:center;font-weight:700;color:#1a6b1a">'+s+'</td><td style="text-align:center">'+tot+'</td><td><div class="pbar-w"><div class="pbar"><div class="pfill" style="width:'+p2+'%"></div></div><span class="plbl">'+p2+'%</span></div></td></tr>';
+    }).join('')+'</tbody>';
+  document.getElementById('tc-area').style.display='block';
+
+  // Tabla cobertura por tema
+  var tm={};
+  regs.forEach(function(r){
+    if(!tm[r.cap]) tm[r.cap]={personas:{},sesiones:0,fechas:[]};
+    var ps=fA?r.participantes.filter(function(p){return p.a===fA;}):r.participantes;
+    ps.forEach(function(p){tm[r.cap].personas[p.n]=true;});
+    tm[r.cap].sesiones+=1;
+    if(tm[r.cap].fechas.indexOf(r.fecha)<0) tm[r.cap].fechas.push(r.fecha);
+  });
+  var totalPers=fA?db.personal.filter(function(p){return p.a===fA;}).length:db.personal.length;
+  document.getElementById('tbl-tema').innerHTML='<thead><tr><th>Titulo de Capacitacion</th><th>Sesiones</th><th>Personas Cap.</th><th>Cobertura</th></tr></thead><tbody>'+
+    Object.keys(tm).sort().map(function(tema){
+      var d=tm[tema];
+      var uniq=Object.keys(d.personas).length;
+      var p2=totalPers?Math.round(uniq/totalPers*100):0;
+      return '<tr><td style="font-size:11px;max-width:160px;word-wrap:break-word">'+tema+'</td>'+
+        '<td style="text-align:center">'+d.sesiones+'</td>'+
+        '<td style="text-align:center;font-weight:700;color:#1a6b1a">'+uniq+'</td>'+
+        '<td><div class="pbar-w"><div class="pbar"><div class="pfill" style="width:'+p2+'%"></div></div><span class="plbl">'+p2+'%</span></div></td></tr>';
+    }).join('')+'</tbody>';
+  document.getElementById('tc-tema').style.display='block';
+
+  // Tabla cobertura por Area + Capacitacion
+  var acm={};
+  regs.forEach(function(r){
+    var ps=fA?r.participantes.filter(function(p){return p.a===fA;}):r.participantes;
+    ps.forEach(function(p){
+      var key=p.a+'|||'+r.cap;
+      if(!acm[key]) acm[key]={area:p.a,cap:r.cap,personas:{}};
+      acm[key].personas[p.n]=true;
+    });
+  });
+  document.getElementById('tbl-areacap').innerHTML='<thead><tr><th>Area</th><th>Capacitacion</th><th>Cap.</th><th>Total</th><th>%</th></tr></thead><tbody>'+
+    Object.keys(acm).sort().map(function(key){
+      var d=acm[key];
+      var uniq=Object.keys(d.personas).length;
+      var totArea=db.personal.filter(function(p){return p.a===d.area;}).length;
+      var p2=totArea?Math.round(uniq/totArea*100):0;
+      var color=p2>=80?'#1a6b1a':p2>=50?'#856404':'#721c24';
+      return '<tr>'+
+        '<td style="font-size:11px;white-space:nowrap">'+d.area+'</td>'+
+        '<td style="font-size:10px;max-width:140px;word-wrap:break-word">'+d.cap+'</td>'+
+        '<td style="text-align:center;font-weight:700;color:#1a6b1a">'+uniq+'</td>'+
+        '<td style="text-align:center">'+totArea+'</td>'+
+        '<td style="text-align:center;font-weight:700;color:'+color+'">'+p2+'%</td></tr>';
+    }).join('')+'</tbody>';
+  document.getElementById('tc-areacap').style.display='block';
+  var fm2={};regs.forEach(function(r){if(!fm2[r.fecha])fm2[r.fecha]={pax:0,areas:{}};var ps=fA?r.participantes.filter(function(p){return p.a===fA;}):r.participantes;fm2[r.fecha].pax+=ps.length;ps.forEach(function(p){fm2[r.fecha].areas[p.a]=true;});});
+  document.getElementById('tbl-fecha').innerHTML='<thead><tr><th>Fecha</th><th>Area(s)</th><th>Participantes</th></tr></thead><tbody>'+
+    Object.keys(fm2).sort(function(a,b){return b.localeCompare(a);}).map(function(f){return '<tr><td style="white-space:nowrap">'+FD(f)+'</td><td style="font-size:11px">'+Object.keys(fm2[f].areas).join(', ')+'</td><td style="text-align:center;font-weight:700">'+fm2[f].pax+'</td></tr>';}).join('')+'</tbody>';
+  document.getElementById('tc-fecha').style.display='block';
+  var pm2={};regs.forEach(function(r){var ps=fA?r.participantes.filter(function(p){return p.a===fA;}):r.participantes;ps.forEach(function(p){if(!pm2[p.n])pm2[p.n]={area:p.a,caps:{},fechas:{}};pm2[p.n].caps[r.cap]=true;pm2[p.n].fechas[r.fecha]=true;});});
+  document.getElementById('tbl-det').innerHTML='<thead><tr><th>Participante</th><th>Area</th><th>Fechas</th><th>Caps.</th></tr></thead><tbody>'+
+    Object.keys(pm2).sort().map(function(nom){var d=pm2[nom];return '<tr><td style="font-size:12px">'+nom+'</td><td style="font-size:11px;color:#666">'+d.area+'</td><td style="text-align:center">'+Object.keys(d.fechas).length+'</td><td style="text-align:center;font-weight:700;color:#1a6b1a">'+Object.keys(d.caps).length+'</td></tr>';}).join('')+'</tbody>';
+  document.getElementById('tc-det').style.display='block';
+
+  // ── TABLA PENDIENTES ──
+  // Determinar qué temas se dictaron en el filtro actual
+  var temasFiltrados=[...new Set(regs.map(function(r){return r.cap;}))];
+
+  // Para cada tema, calcular quién ya fue capacitado (en TODOS los registros históricos, no solo el filtro)
+  // y quién falta según el área seleccionada
+  var filasPend=[];
+  temasFiltrados.forEach(function(tema){
+    // Personas que recibieron este tema en TODA la historia
+    var capSet={};
+    db.registros.forEach(function(r){
+      if(r.cap!==tema) return;
+      r.participantes.forEach(function(p){
+        if(fA && p.a!==fA) return;
+        capSet[p.n]=true;
+      });
+    });
+    // Personal del área filtrada o todo
+    var personalFiltrado=fA?db.personal.filter(function(p){return p.a===fA;}):db.personal;
+    // Pendientes = personal que NO está en capSet
+    personalFiltrado.forEach(function(p){
+      if(!capSet[p.n]){
+        filasPend.push({area:p.a,nombre:p.n,tema:tema});
+      }
+    });
+  });
+
+  if(filasPend.length>0){
+    // Ordenar por area, tema, nombre
+    filasPend.sort(function(a,b){
+      return a.area.localeCompare(b.area)||a.tema.localeCompare(b.tema)||a.nombre.localeCompare(b.nombre);
+    });
+    document.getElementById('pend-info').textContent=filasPend.length+' persona(s) pendiente(s) de capacitar en los temas seleccionados.';
+    document.getElementById('tbl-pend').innerHTML='<thead><tr><th>Area</th><th>Participante</th><th>Capacitacion pendiente</th></tr></thead><tbody>'+
+      filasPend.map(function(f){
+        return '<tr>'+
+          '<td style="font-size:11px;white-space:nowrap">'+f.area+'</td>'+
+          '<td style="font-size:12px">'+f.nombre+'</td>'+
+          '<td style="font-size:10px;color:#721c24;max-width:150px;word-wrap:break-word">'+f.tema+'</td>'+
+          '</tr>';
+      }).join('')+'</tbody>';
+    document.getElementById('tc-pend').style.display='block';
+  } else {
+    document.getElementById('pend-info').textContent='Todo el personal seleccionado ya fue capacitado en estos temas.';
+    document.getElementById('tbl-pend').innerHTML='<tr><td colspan="3" style="text-align:center;color:#1a6b1a;font-weight:700;padding:16px">Todo el personal capacitado</td></tr>';
+    document.getElementById('tc-pend').style.display='block';
+  }
+}
+
+function EX_EST(){
+  var fM=document.getElementById('f-mes').value,fA=document.getElementById('f-area').value,fC=document.getElementById('f-cap').value;
+  var regs=db.registros.filter(function(r){if(fM&&normFecha(r.fecha)!==fM)return false;if(fC&&r.cap!==fC)return false;if(fA&&!r.participantes.some(function(p){return p.a===fA;}))return false;return true;});
+  if(!regs.length){alert('No hay datos para exportar.');return;}
+  var rows=[['Fecha','Titulo','Responsable','Participante','Area']];
+  regs.forEach(function(r){var ps=fA?r.participantes.filter(function(p){return p.a===fA;}):r.participantes;ps.forEach(function(p){rows.push([r.fecha,r.cap,r.exp,p.n,p.a]);});});
+  DL(rows,'estadisticas.csv');
+}
+
+function RH_(){
+  var el=document.getElementById('hl');
+  if(!db.registros.length){el.innerHTML='<div class="empty">Sin registros aun</div>';return;}
+  el.innerHTML=db.registros.slice().sort(function(a,b){return b.fecha.localeCompare(a.fecha);}).map(function(r){
+    return '<div class="ri"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;color:#1a1a2e;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.cap+'</div><div style="font-size:11px;color:#666;margin-top:2px">'+FD(r.fecha)+' - '+r.exp+'</div><div style="font-size:11px;color:#888">'+r.participantes.length+' participante'+(r.participantes.length!==1?'s':'')+'</div></div><span class="bb">'+r.participantes.length+'p</span></div>';
+  }).join('');
+}
+
+function FD(d){
+  if(!d) return'';
+  var clean=normFechaFull(String(d).trim());
+  var p=clean.split('-');
+  if(p.length<3) return clean;
+  var ms=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  var mes=parseInt(p[1]);
+  if(isNaN(mes)||mes<1||mes>12) return clean;
+  return parseInt(p[2])+' '+ms[mes-1]+' '+p[0];
+}
+
+function EX_HIS(){
+  if(!db.registros.length){alert('No hay registros.');return;}
+  var rows=[['Fecha','Titulo','Responsable','Participante','Area']];
+  db.registros.forEach(function(r){r.participantes.forEach(function(p){rows.push([r.fecha,r.cap,r.exp,p.n,p.a]);});});
+  DL(rows,'historial_capacitaciones.csv');
+}
+
+async function AP(){
+  var mes=document.getElementById('pm').value,cap=document.getElementById('pci').value.trim(),exp=document.getElementById('pei').value.trim();
+  if(!mes||!cap){SM('prm','Selecciona mes y titulo.',false);return;}
+  try{
+    var id=String(Date.now());
+    await GS({action:'append',sheet:'Programa',data:{ID:id,Mes:mes,Capacitacion:cap,Responsable:exp}});
+    db.programa.push({mes:mes,cap:cap,exp:exp,id:id});
+    if(db.caps.indexOf(cap)<0){db.caps.push(cap);await GS({action:'save',sheet:'Capacitaciones',data:db.caps.map(function(c){return{Titulo:c};})});}
+    document.getElementById('pci').value='';document.getElementById('pei').value='';
+    RPR();SM('prm','Agregado al programa.',true);
+  }catch(e){SM('prm','Error al guardar.',false);}
+}
+
+function RPR(){
+  var el=document.getElementById('prl');
+  if(!db.programa.length){el.innerHTML='<div class="empty">Sin programa aun</div>';return;}
+  var byM={};db.programa.forEach(function(p){if(!byM[p.mes])byM[p.mes]=[];byM[p.mes].push(p);});
+  var mn=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  el.innerHTML=Object.keys(byM).sort().reverse().map(function(m){
+    var parts=m.split('-');
+    return '<div class="mh">'+mn[parseInt(parts[1])-1]+' '+parts[0]+'</div>'+byM[m].map(function(p){
+      return '<div class="pi"><div style="flex:1;min-width:0"><div style="font-size:12px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+p.cap+'</div>'+(p.exp?'<div style="font-size:11px;color:#888">'+p.exp+'</div>':'')+'</div></div>';
+    }).join('');
+  }).join('');
+}
+
+function RB(key,elId){
+  var el=document.getElementById(elId);
+  if(!db[key].length){el.innerHTML='<div class="empty">Lista vacia</div>';return;}
+  el.innerHTML=db[key].map(function(x,i){return '<div class="dli"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:4px">'+x+'</span><button class="xb" onclick="DB_B(\''+key+'\','+i+',\''+elId+'\')">x</button></div>';}).join('');
+}
+
+async function AB(key,inp,elId){
+  var v=document.getElementById(inp).value.trim();if(!v||db[key].indexOf(v)>=0)return;
+  db[key].push(v);
+  var sm={caps:'Capacitaciones',exps:'Responsables'},fm={caps:'Titulo',exps:'Nombre'};
+  try{await GS({action:'save',sheet:sm[key],data:db[key].map(function(x){var o={};o[fm[key]]=x;return o;})});}catch(e){}
+  document.getElementById(inp).value='';RB(key,elId);
+}
+
+async function DB_B(key,i,elId){
+  db[key].splice(i,1);
+  var sm={caps:'Capacitaciones',exps:'Responsables'},fm={caps:'Titulo',exps:'Nombre'};
+  try{await GS({action:'save',sheet:sm[key],data:db[key].map(function(x){var o={};o[fm[key]]=x;return o;})});}catch(e){}
+  RB(key,elId);
+}
+
+function RBP(){
+  var q=document.getElementById('bp').value.toLowerCase();
+  var items=db.personal.filter(function(p){return !q||p.n.toLowerCase().includes(q)||p.a.toLowerCase().includes(q);});
+  var el=document.getElementById('lp');
+  if(!items.length){el.innerHTML='<div class="empty">Sin resultados</div>';return;}
+  el.innerHTML=items.map(function(p){var i=db.personal.indexOf(p);return '<div class="dli"><span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+p.n+' <span style="color:#aaa;font-size:10px">'+p.a+'</span></span><button class="xb" onclick="DPE('+i+')">x</button></div>';}).join('');
+}
+
+async function ADP(){
+  var n=document.getElementById('nn').value.trim(),a=document.getElementById('na').value.trim();if(!n||!a)return;
+  db.personal.push({n:n,a:a});
+  try{await GS({action:'save',sheet:'Personal',data:db.personal.map(function(p){return{Nombre:p.n,Area:p.a};})});}catch(e){}
+  document.getElementById('nn').value='';document.getElementById('na').value='';RBP();BAF();
+}
+
+async function DPE(i){
+  db.personal.splice(i,1);
+  try{await GS({action:'save',sheet:'Personal',data:db.personal.map(function(p){return{Nombre:p.n,Area:p.a};})});}catch(e){}
+  RBP();
+}
+
+function DL(rows,name){
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
+}
+
+function SM(id,txt,ok){
+  var el=document.getElementById(id);el.textContent=txt;
+  el.style.background=ok?'#d4edda':'#f8d7da';el.style.color=ok?'#155724':'#721c24';
+  el.classList.remove('hidden');setTimeout(function(){el.classList.add('hidden');},5000);
+}
+
+function EX_PEND(){
+  var rows=[['Participante']];
+  var tbl=document.getElementById('tbl-pend');
+  if(!tbl) return;
+  var filas=tbl.querySelectorAll('tbody tr');
+  if(!filas.length){alert('No hay datos para exportar.');return;}
+  // Nombres únicos
+  var nombres={};
+  filas.forEach(function(tr){
+    var celdas=tr.querySelectorAll('td');
+    if(celdas.length>=2){
+      var nombre=celdas[1].textContent.trim();
+      if(nombre) nombres[nombre]=true;
+    }
+  });
+  var lista=Object.keys(nombres).sort();
+  if(!lista.length){alert('No hay pendientes para exportar.');return;}
+  lista.forEach(function(n){rows.push([n]);});
+  DL(rows,'pendientes_capacitacion.csv');
+}
+
+document.getElementById('fi').valueAsDate=new Date();
+var now=new Date();document.getElementById('pm').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+INIT();
+</script>
+</body>
+</html>
