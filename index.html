@@ -346,6 +346,13 @@ async function INIT(){
     try{var c=await GS_GET('Capacitaciones');if(c&&c.length)db.caps=c.map(function(r){return r.Titulo||'';}).filter(Boolean);}catch(e){}
     // Cargar responsables personalizados
     try{var ex=await GS_GET('Responsables');if(ex&&ex.length)db.exps=ex.map(function(r){return r.Nombre||'';}).filter(Boolean);}catch(e){}
+    // Cargar personal personalizado desde Sheets si existe
+    try{
+      var pers=await GS_GET('Personal');
+      if(pers&&pers.length){
+        db.personal=pers.map(function(r){return{n:String(r.Nombre||'').trim(),a:String(r.Area||'').trim()};}).filter(function(p){return p.n&&p.a;});
+      }
+    }catch(e){}
     try{var pg=await GS_GET('Programa');if(pg&&pg.length)db.programa=pg.map(function(r){return{mes:r.Mes,cap:r.Capacitacion,exp:r.Responsable,id:r.ID};});}catch(e){}
     BTI();BAF();RH_();
     // Contar personas únicas capacitadas
@@ -760,16 +767,37 @@ function RBP(){
 }
 
 async function ADP(){
-  var n=document.getElementById('nn').value.trim(),a=document.getElementById('na').value.trim();if(!n||!a)return;
+  var n=document.getElementById('nn').value.trim(),a=document.getElementById('na').value.trim();
+  if(!n||!a){alert('Ingresa nombre y area.');return;}
   db.personal.push({n:n,a:a});
-  try{await GS({action:'save',sheet:'Personal',data:db.personal.map(function(p){return{Nombre:p.n,Area:p.a};})});}catch(e){}
-  document.getElementById('nn').value='';document.getElementById('na').value='';RBP();BAF();
+  try{
+    var res=await GS({action:'save',sheet:'Personal',data:db.personal.map(function(p){return{Nombre:p.n,Area:p.a};})});
+    document.getElementById('nn').value='';
+    document.getElementById('na').value='';
+    RBP();BAF();
+    alert('Personal agregado correctamente.');
+  }catch(e){
+    // Revertir si fallo
+    db.personal.pop();
+    alert('Error al guardar. Intenta de nuevo.');
+  }
 }
 
 async function DPE(i){
+  var p=db.personal[i];
+  if(!p) return;
+  if(!confirm('Eliminar a '+p.n+'?')) return;
   db.personal.splice(i,1);
-  try{await GS({action:'save',sheet:'Personal',data:db.personal.map(function(p){return{Nombre:p.n,Area:p.a};})});}catch(e){}
-  RBP();
+  try{
+    var res=await GS({action:'save',sheet:'Personal',data:db.personal.map(function(p){return{Nombre:p.n,Area:p.a};})});
+    RBP();BAF();
+    alert('Personal eliminado correctamente.');
+  }catch(e){
+    // Revertir si fallo
+    db.personal.splice(i,0,p);
+    RBP();
+    alert('Error al eliminar. Intenta de nuevo.');
+  }
 }
 
 function DL(rows,name){
