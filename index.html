@@ -346,28 +346,42 @@ async function INIT(){
     try{var c=await GS_GET('Capacitaciones');if(c&&c.length)db.caps=c.map(function(r){return r.Titulo||'';}).filter(Boolean);}catch(e){}
     // Cargar responsables personalizados
     try{var ex=await GS_GET('Responsables');if(ex&&ex.length)db.exps=ex.map(function(r){return r.Nombre||'';}).filter(Boolean);}catch(e){}
-    // Cargar personal agregado desde Sheets y excluir eliminados
+    // Cargar personal agregado y excluir eliminados
     try{
+      // 1. Cargar eliminados
       var eliminados={};
       try{
         var elim=await GS_GET('Eliminados');
-        if(elim&&elim.length) elim.forEach(function(r){if(r.Nombre)eliminados[String(r.Nombre).trim()]=true;});
+        if(elim&&elim.length){
+          elim.forEach(function(r){
+            var nombre=String(r.Nombre||r.nombre||'').trim();
+            if(nombre) eliminados[nombre.toUpperCase()]=true;
+          });
+        }
       }catch(e2){}
-      // Filtrar personal eliminado de la lista base
-      db.personal=db.personal.filter(function(p){return !eliminados[p.n];});
-      // Agregar personal nuevo desde hoja Personal
+
+      // 2. Filtrar eliminados de lista base
+      db.personal=db.personal.filter(function(p){
+        return !eliminados[p.n.toUpperCase()];
+      });
+
+      // 3. Cargar nuevos desde hoja Personal
       var pers=await GS_GET('Personal');
+      console.log('Personal desde Sheets:', JSON.stringify(pers).substring(0,200));
       if(pers&&pers.length){
         pers.forEach(function(r){
-          var n=String(r.Nombre||'').trim(),a=String(r.Area||'').trim();
-          if(n&&a&&!eliminados[n]){
-            // Solo agregar si no existe ya en la lista
-            var existe=db.personal.some(function(p){return p.n===n;});
+          // Intentar diferentes nombres de columna
+          var n=String(r.Nombre||r.nombre||r.NOMBRE||Object.values(r)[0]||'').trim();
+          var a=String(r.Area||r.area||r.AREA||Object.values(r)[1]||'').trim();
+          if(n&&a&&!eliminados[n.toUpperCase()]){
+            var existe=db.personal.some(function(p){
+              return p.n.toUpperCase()===n.toUpperCase();
+            });
             if(!existe) db.personal.push({n:n,a:a});
           }
         });
       }
-    }catch(e){}
+    }catch(e){console.log('Error carga personal:',e);}
     try{var pg=await GS_GET('Programa');if(pg&&pg.length)db.programa=pg.map(function(r){return{mes:r.Mes,cap:r.Capacitacion,exp:r.Responsable,id:r.ID};});}catch(e){}
     BTI();BAF();RH_();
     // Contar personas únicas capacitadas
