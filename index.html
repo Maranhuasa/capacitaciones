@@ -331,6 +331,20 @@ function BTI(){
 
 function trained(cap,nombre){return !!(tidx[cap]&&tidx[cap][nombre]);}
 
+function justStatus(cap,nombre){
+  // Devuelve 'med' o 'vac' si la persona tiene justificacion para ese tema
+  if(!db.justificados||!db.justificados.length) return null;
+  for(var i=0;i<db.justificados.length;i++){
+    var j=db.justificados[i];
+    if(String(j.Capacitacion||'').trim()===cap && String(j.Participante||'').trim()===nombre){
+      var m=String(j.Motivo||'').trim().toLowerCase();
+      if(m.indexOf('medico')>=0||m.indexOf('médico')>=0) return 'med';
+      if(m.indexOf('vacacion')>=0) return 'vac';
+    }
+  }
+  return null;
+}
+
 async function INIT(){
   SS2('loading','Conectando a Google Sheets...');
   try{
@@ -433,7 +447,11 @@ function RP(){
   var area=document.getElementById('af').value,cap=document.getElementById('ci').value.trim(),q=document.getElementById('ps').value.toLowerCase();
   if(!area)return;
   var items=db.personal.map(function(p,i){return{p:p,i:i};}).filter(function(x){return x.p.a===area;});
-  var tot=items.length,tc=items.filter(function(x){return trained(cap,x.p.n);}).length,pct=tot?Math.round(tc/tot*100):0;
+  var tot=items.length;
+  var tc=items.filter(function(x){
+    return trained(cap,x.p.n)||(cap&&justStatus(cap,x.p.n)!==null);
+  }).length;
+  var pct=tot?Math.round(tc/tot*100):0;
   var ib=document.getElementById('ibox');
   if(cap&&tc>0){ib.classList.remove('hidden');ib.innerHTML='Capacitados anteriormente: <b>'+tc+'</b> de '+tot+'. Faltan: <b>'+(tot-tc)+'</b>.';}
   else ib.classList.add('hidden');
@@ -441,7 +459,7 @@ function RP(){
   document.getElementById('pbp').textContent=pct+'%';
   document.getElementById('pbf').style.width=pct+'%';
   if(q)items=items.filter(function(x){return x.p.n.toLowerCase().includes(q);});
-  if(filtro==='pendientes')items=items.filter(function(x){return !trained(cap,x.p.n)&&!selH[x.i];});
+  if(filtro==='pendientes')items=items.filter(function(x){return !trained(cap,x.p.n)&&!selH[x.i]&&!justStatus(cap,x.p.n);});
   if(filtro==='cap')items=items.filter(function(x){return trained(cap,x.p.n);});
   if(filtro==='hoy')items=items.filter(function(x){return !!selH[x.i];});
   items.sort(function(a,b){
@@ -453,11 +471,14 @@ function RP(){
   if(!items.length){el.innerHTML='<div class="empty">Sin resultados</div>';USC();return;}
   el.innerHTML=items.map(function(x){
     var iT=trained(cap,x.p.n),st=selH[x.i];
+    var jst=cap?justStatus(cap,x.p.n):null;
     var cls='pend',lbl='Pendiente',ico='';
     if(st==='cap'){cls='sel';lbl='Marcado hoy';ico='+';}
     else if(st==='med'){cls='med';lbl='Desc. Medico';ico='+';}
     else if(st==='vac'){cls='vac';lbl='Vacaciones';ico='+';}
     else if(iT){cls='cap';lbl='Ya capacitado';ico='+';}
+    else if(jst==='med'){cls='med';lbl='Desc. Medico';ico='+';}
+    else if(jst==='vac'){cls='vac';lbl='Vacaciones';ico='+';}
     return '<div class="pr '+cls+'" onclick="TS('+x.i+')" title="Toca para cambiar estado">'+
       '<div class="pk">'+ico+'</div><div class="pn">'+x.p.n+'</div><span class="ps">'+lbl+'</span></div>';
   }).join('');USC();
